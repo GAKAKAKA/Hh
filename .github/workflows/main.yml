@@ -1,0 +1,283 @@
+# ------------------------------------------ ห้ามก๊อป
+from colorama import Back, Fore, Style
+import os
+import json
+from requests import post, Session, get
+from random import choice
+import random
+import threading
+from discord.ext import commands
+import requests as ru
+import discord
+from discord import ui
+import time
+import platform
+from datetime import datetime
+import pytz
+import asyncio
+import socket
+from discord import app_commands
+from discord_webhooks import DiscordWebhooks
+from discord.ext.commands import Bot
+import aiohttp
+import uuid
+from typing import Literal
+import json
+from bs4 import BeautifulSoup as bs
+from pystyle import Colors, Colorate
+import itertools
+from discord import SyncWebhook
+import requests
+from re import match
+import sys
+import subprocess
+import itertools
+from discord import Activity, ActivityType, Status
+from datetime import datetime, timedelta
+
+utc_now = datetime.utcnow()
+timezone_offset = timedelta(hours=7)
+local_time = utc_now + timezone_offset
+
+delay = 5 ## DELAY การกดปุ่ม 
+LOG_ID = 1201827866959159316 # LOG การใช้ปุ่ม
+TOKEN = "" # TOKEN BOT
+
+## DELAY BOT (วินาที)
+VFYDELAY = 1800 #บอทยืนยันตัวตน
+STATUSDELAY = 1800 #บอทเม็ดม่วง
+NUKEBOT = 180 #บอทยิงดิส
+
+formatted_time = local_time.strftime("%Y-%m-%d %H:%M:%S")
+avatarbot = "https://cdn.discordapp.com/attachments/1187996016591507477/1193534450357776484/vecteezy_discord-logo-png-discord-icon-transparent-png_18930680_825.webp?ex=65ad1093&is=659a9b93&hm=af0b44f34612c4a7f9a7ea858849d5ff0414d09af9efcc2aa735098ec7d140ab&"
+Alert = "> ⚠️  คุณไม่มีสิทธิ์ หรือ การอนุณาติที่สามารถใช้คำสั่งนี้ได้คะ "
+
+class VfyBot(ui.Modal, title="บอทยืนยันตัวตน"):
+    token = ui.TextInput(
+        label="MTI5Njc1NDE3MzM1Mzc4NzM5Mg.G9b7v8.f9g1_x9rky2BRtkVLLdLE6UmS93hj1TFiMqbgY",
+        placeholder="NzYwMTI1MDA2NDI4MjQxOTUy.X3Hfkw.EjIL6vI9XPHvhp9mmh6XZf7RoMo",
+        style=discord.TextStyle.long
+    )
+    id_log = ui.TextInput(
+        label="1251872011056058378",
+        placeholder="1193168506833883237",
+        style=discord.TextStyle.short
+    )    
+    role_id = ui.TextInput(
+        label="1237992967772569661",
+        placeholder="1192448692398084116",
+        style=discord.TextStyle.short
+    )    
+    async def on_submit(self, interaction: discord.Interaction):
+        token = self.token.value
+        id_log = self.id_log.value
+        role_id = self.role_id.value
+
+        if not is_valid_token(token):
+            await interaction.response.send_message("Token ไม่ถูกต้อง โปรด กรอกให้ถูกต้องด้วยคะ", ephemeral=True)
+            return
+
+        try:
+        # Send a response to the user using ephemeral message
+            await interaction.response.send_message(f"Host บอทยืนยันตัวตนเสร็จสิ้น : `{token}`\nUsed by: {interaction.user.mention}", ephemeral=True)
+            channel = client.get_channel(LOG_ID)
+            user = interaction.user
+            embed = discord.Embed(title="🤖 แจ้งเตือนการใช้งานบอท", description=f"\n👤 ผู้ใช้งาน : {interaction.user.mention} \n\n🧑🏻‍💻 โปรแกรม : บอทยืนยันตัวตนเสร็จสิ้น\n\n ⏲️ ระยะเวลาให้ใช้งาน : {VFYDELAY // 60} นาที", color=0x15ff00)
+            embed.set_author(name="BOT RUN SCRIPT HOSTING", url="", icon_url=avatarbot)   
+            embed.set_thumbnail(url=user.avatar.url)
+            embed.set_footer(text=f"ใช้งานเมื่อ {formatted_time}")
+            embed.set_image(url="https://media.discordapp.net/attachments/1187996016591507477/1193284620624609310/standard_3.gif?ex=65ac27e7&is=6599b2e7&hm=a174e7ed5c033eb4a320385bf302767e200af78541ce978340523075fa6de16e&=&width=585&height=75")
+            message1 = await channel.send(content="**🟢 กำลังเชื่อมต่อไปยังบอทคะ ... **",embed=embed)
+            # Execute a command using subprocess
+            process = subprocess.Popen(["python", "Verify1.py", token, id_log, role_id])
+            await asyncio.sleep(5)
+            await message1.edit(content="**🟢 เชื่อมต่อบอทเสร็จสิ้น  **", embed=embed)
+
+            # Schedule a task to cancel the subprocess after a specified time (e.g., 3600 seconds)
+            await asyncio.sleep(VFYDELAY)
+            process.terminate()
+
+            await message1.edit(content="**🔴 ยกเลิกการเชื่อมต่อเสร็จสิ้น (ถึงเวลาที่กำหนดแล้ว)**", embed=embed)
+
+        except Exception as e:
+              await interaction.followup.send(f"Error starting subprocess: {e}", ephemeral=True)
+def is_valid_token(token):
+    return len(token) == 72
+class HostStatus(ui.Modal, title="บอทสถานะเม็ดม่วง"):
+    token = ui.TextInput(
+        label="ใส่ TOKEN ของบอท",
+        placeholder="NzYwMTI1MDA2NDI4MjQxOTUy.X3Hfkw.EjIL6vI9XPHvhp9mmh6XZf7RoMo",
+        style=discord.TextStyle.short
+    )
+    name = ui.TextInput(
+        label="ชื่อแสดง สเตตัส",
+        placeholder="หล่อเฟี้ยววว !!!",
+        style=discord.TextStyle.long
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        token = self.token.value
+        name = self.name.value
+
+        # Validate the token
+        if not is_valid_token(token):
+            await interaction.response.send_message("Token ไม่ถูกต้อง โปรด กรอกให้ถูกต้องด้วยคะ", ephemeral=True)
+            return
+
+        try:
+            # Send a response to the user using ephemeral message
+            await interaction.response.send_message(f"**Host บอทเม็ดม่วงสำเร็จ : **`{token}`\n STATUS NAME : {name}", ephemeral=True)
+            channel = client.get_channel(LOG_ID)
+            user = interaction.user
+            embed = discord.Embed(title="🤖 แจ้งเตือนการใช้งานบอท", description=f"\n👤 ผู้ใช้งาน : {interaction.user.mention} \n\n🧑🏻‍💻 โปรแกรม : บอทเม็ดม่วง\n\n ⏲️ ระยะเวลาให้ใช้งาน : {STATUSDELAY//60} นาที", color=0x15ff00)
+            embed.set_author(name="BOT RUN SCRIPT HOSTING", url="", icon_url=avatarbot)   
+            embed.set_thumbnail(url=user.avatar.url)
+            embed.set_footer(text=f"ใช้งานเมื่อ {formatted_time}")
+            embed.set_image(url="https://media.discordapp.net/attachments/1187996016591507477/1193284620624609310/standard_3.gif?ex=65ac27e7&is=6599b2e7&hm=a174e7ed5c033eb4a320385bf302767e200af78541ce978340523075fa6de16e&=&width=585&height=75")
+            message1 = await channel.send(content="**🟢 กำลังเชื่อมต่อไปยังบอทคะ ... **",embed=embed)
+            # Execute a command using subprocess
+            process = subprocess.Popen(["python", "bot2.py", token, name])
+            await asyncio.sleep(5)
+            await message1.edit(content="**🟢 เชื่อมต่อบอทเสร็จสิ้น  **", embed=embed)
+
+            # Schedule a task to cancel the subprocess after a specified time (e.g., 3600 seconds)
+            await asyncio.sleep(STATUSDELAY)
+            process.terminate()
+
+            await message1.edit(content="**🔴 ยกเลิกการเชื่อมต่อเสร็จสิ้น (ถึงเวลาที่กำหนดแล้ว)**", embed=embed)
+
+
+        except Exception as e:
+            # Handle any other exceptions that might occur
+            await interaction.response.send_message(f"เกิดข้อผิดพลาด: {e}", ephemeral=True)
+
+class botnuke(ui.Modal, title="บอทยิงดิส"):
+    token = ui.TextInput(
+        label="ใส่ TOKEN ของบอท",
+        placeholder="NzYwMTI1MDA2NDI4MjQxOTUy.X3Hfkw.EjIL6vI9XPHvhp9mmh6XZf7RoMo",
+        style=discord.TextStyle.short
+    )
+    async def on_submit(self, interaction: discord.Interaction):
+        token = self.token.value
+
+        # Validate the token
+        if not is_valid_token(token):
+            await interaction.response.send_message("Token ไม่ถูกต้อง โปรด กรอกให้ถูกต้องด้วยคะ", ephemeral=True)
+            return
+
+        try:
+            # Send a response to the user using ephemeral message
+            await interaction.response.send_message(f"**Host บอทยิงดิส : **`{token}`\n COMMANDS : !setup\n ระยะเวลา : {NUKEBOT} วินาที", ephemeral=True)
+            channel = client.get_channel(LOG_ID)
+            user = interaction.user
+            embed = discord.Embed(title="🤖 แจ้งเตือนการใช้งานบอท", description=f"\n👤 ผู้ใช้งาน : {interaction.user.mention} \n\n🧑🏻‍💻 โปรแกรม : บอทยิงดิส\n\n ⏲️ ระยะเวลาให้ใช้งาน : {NUKEBOT // 60} นาที", color=0x15ff00)
+            embed.set_author(name="BOT RUN SCRIPT HOSTING", url="", icon_url=avatarbot)   
+            embed.set_thumbnail(url=user.avatar.url)
+            embed.set_footer(text=f"ใช้งานเมื่อ {formatted_time}")
+            embed.set_image(url="https://media.discordapp.net/attachments/1187996016591507477/1193284620624609310/standard_3.gif?ex=65ac27e7&is=6599b2e7&hm=a174e7ed5c033eb4a320385bf302767e200af78541ce978340523075fa6de16e&=&width=585&height=75")
+            message1 = await channel.send(content="**🟢 กำลังเชื่อมต่อไปยังบอทคะ ... **",embed=embed)
+            # Execute a command using subprocess
+            process = subprocess.Popen(["python", "botnuke.py", token])
+            await asyncio.sleep(5)
+            await message1.edit(content="**🟢 เชื่อมต่อบอทเสร็จสิ้น  **", embed=embed)
+
+            # Schedule a task to cancel the subprocess after a specified time (e.g., 3600 seconds)
+            await asyncio.sleep(NUKEBOT)
+            process.terminate()
+
+            await message1.edit(content="**🔴 ยกเลิกการเชื่อมต่อเสร็จสิ้น (ถึงเวลาที่กำหนดแล้ว)**", embed=embed)
+
+
+        except Exception as e:
+            # Handle any other exceptions that might occur
+            await interaction.response.send_message(f"เกิดข้อผิดพลาด: {e}", ephemeral=True)
+
+
+class bot_button(discord.ui.View):
+    def __init__(self) -> None:
+        super().__init__(timeout=None)
+        self.value = None
+        self.cooldown = commands.CooldownMapping.from_cooldown(1, delay, commands.BucketType.user)
+
+    @discord.ui.button(label="บอทยืนยันตัวตน", emoji="<:PandaLove:1187994076562333838> ", style=discord.ButtonStyle.green, custom_id="ui_button1")
+    async def bot_button1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # ตรวจสอบ Cooldown
+        bucket = self.cooldown.get_bucket(interaction.message)
+        retry_after = bucket.update_rate_limit()
+
+        if retry_after:
+            # ถ้าอยู่ใน Cooldown ให้ส่งข้อความไปยังผู้ใช้
+            await interaction.response.send_message(f"> 📊 ท่านสามารถกดได้อีกรอบใน {round(retry_after, 1)} วินาที !!", ephemeral=True)
+        else:
+            # ถ้าไม่อยู่ใน Cooldown ให้เรียกใช้ Modal
+            await interaction.response.send_modal(VfyBot())      
+
+    @discord.ui.button(label="บอทเม็ดม่วง", emoji="<:__:1187994008530722896> ", style=discord.ButtonStyle.red, custom_id="ui_button2")
+    async def bot_button2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # ตรวจสอบ Cooldown
+        bucket = self.cooldown.get_bucket(interaction.message)
+        retry_after = bucket.update_rate_limit()
+
+        if retry_after:
+            # ถ้าอยู่ใน Cooldown ให้ส่งข้อความไปยังผู้ใช้
+            await interaction.response.send_message(f"> 📊 ท่านสามารถกดได้อีกรอบใน {round(retry_after, 1)} วินาที !!", ephemeral=True)
+        else:
+            # ถ้าไม่อยู่ใน Cooldown ให้เรียกใช้ Modal
+            await interaction.response.send_modal(HostStatus())      
+        
+
+
+    @discord.ui.button(label="บอทยิงดิส NukeBot", emoji="<:Yes:1187994016269205604> ", style=discord.ButtonStyle.primary, custom_id="ui_button3")
+    async def bot_button3(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # ตรวจสอบ Cooldown
+        bucket = self.cooldown.get_bucket(interaction.message)
+        retry_after = bucket.update_rate_limit()
+
+        if retry_after:
+            # ถ้าอยู่ใน Cooldown ให้ส่งข้อความไปยังผู้ใช้
+            await interaction.response.send_message(f"> 📊 ท่านสามารถกดได้อีกรอบใน {round(retry_after, 1)} วินาที !!", ephemeral=True)
+        else:
+            # ถ้าไม่อยู่ใน Cooldown ให้เรียกใช้ Modal
+            await interaction.response.send_modal(botnuke())   
+
+
+
+class aclient(commands.Bot):    
+    def __init__(self): 
+        super().__init__(command_prefix=commands.when_mentioned_or('.'), intents=discord.Intents().all())
+        self.role = None
+
+    async def on_ready(self):
+        prfx = (Back.BLACK + Fore.GREEN + time.strftime("%H:%M:%S UTC", time.gmtime()) + Back.RESET + Fore.WHITE + Style.BRIGHT)
+        activity = discord.Streaming(name="SlashCommands", url="https://www.twitch.tv/yanglarkdeveloper")
+        await client.change_presence(status=discord.Status.idle, activity=activity)
+        print(prfx + " Logged in as " + Fore.YELLOW + self.user.name)
+        print(prfx + " Bot ID " + Fore.YELLOW + str(self.user.id))
+        print(prfx + " Discord Version " + Fore.YELLOW + discord.__version__)
+        print(prfx + " Python Version " + Fore.YELLOW + str(platform.python_version()))
+        synced = await self.tree.sync()
+        print(prfx + " Slash CMDs Synced " + Fore.YELLOW + str(len(synced)) + " Commands")
+        self.add_view(bot_button())
+
+
+
+client = aclient()
+
+
+@client.tree.command(name='setupbotmenu', description='ใส่ ID CHANNEL (ADMINONLY)')
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(channel_id='ตัวอย่าง 1193256543974592574')
+async def bot(interaction: commands.Context, channel_id: str): 
+      embed=discord.Embed(title="บอทดิสคอร์ดคุณภาพ", description="`🎴` `:` ท่านสามารถกรอกโทเค้นต่างๆ เพื่อใช้งานบอทได้ทันทีเลย\n\n`✅` `:` ปลอดภัยไม่มีการเก็บข้อมูลนำโทเค้นไปไว้เองหรือนำไปกลั่นแกล้งใดทั้งสิ้น", color=0xff2c2c)
+      embed.add_field(name="", value="```diff\n-  อย่ากดมากเกินไปเพราะบอททำงานได้ ต่อคนเท่านั้น \n```", inline=True)
+      embed.set_author(name="BOT RUN SCRIPT HOSTING", url="", icon_url=avatarbot)
+      embed.set_image(url="https://media.discordapp.net/attachments/1187996016591507477/1188009336736317510/standard.gif?ex=65ab6bea&is=6598f6ea&hm=b370c07bc549b335c3eda075141108a5496ff643a45b3372eceaecc9ccf7d54e&=&width=850&height=302")
+      channel = client.get_channel(int(channel_id))
+      await interaction.response.send_message(f'ได้สร้างคำสั่งบนห้อง <#{channel_id}>', ephemeral=True)
+      await channel.send(embed=embed,view=bot_button())
+@bot.error
+async def bot_error(interaction: discord.Interaction, error):
+        if isinstance(error, app_commands.errors.MissingPermissions):
+            await interaction.response.send_message(f"{Alert}", ephemeral=True)
+
+client.run(TOKEN)
